@@ -1,0 +1,35 @@
+import express from 'express';
+import cors from 'cors';
+import Database from 'better-sqlite3';
+import crypto from 'node:crypto';
+const app=express(); app.use(cors()); app.use(express.json({limit:'20kb'}));
+const db=new Database(process.env.DB_FILE || './rideon.sqlite');
+db.pragma('journal_mode = WAL');
+db.exec(`CREATE TABLE IF NOT EXISTS rides (id TEXT PRIMARY KEY, passengerName TEXT NOT NULL, pickup TEXT NOT NULL, dropoff TEXT NOT NULL, vehicle TEXT NOT NULL, fare INTEGER NOT NULL, status TEXT NOT NULL, driverName TEXT, createdAt TEXT NOT NULL);
+CREATE TABLE IF NOT EXISTS drivers (id TEXT PRIMARY KEY, name TEXT NOT NULL, phone TEXT, approved INTEGER NOT NULL DEFAULT 0, createdAt TEXT NOT NULL);`);
+const allRides=db.prepare('SELECT * FROM rides ORDER BY createdAt DESC LIMIT 100');
+const findRide=db.prepare('SELECT * FROM rides WHERE id=?');
+const clean=(s,max=120)=>typeof s==='string'?s.trim().slice(0,max):'';
+app.get('/api/health',(_,res)=>res.json({ok:true,service:'rideon'}));
+app.get('/api/rides',(_,res)=>res.json({rides:allRides.all()}));
+app.post('/api/rides',(req,res)=>{
+ const passengerName=clean(req.body.passengerName),pickup=clean(req.body.pickup),dropoff=clean(req.body.dropoff),vehicle=req.body.vehicle;
+ if(!passengerName||!pickup||!dropoff||!['bike','auto','cab'].includes(vehicle))return res.status(400).json({error:'Valid passenger, pickup, dropoff and vehicle required'});
+ const fare={bike:45,auto:85,cab:160}[vehicle]; const id=crypto.randomUUID();
+ db.prepare('INSERT INTO rides VALUES (?,?,?,?,?,?,?,?,?)').run(id,passengerName,pickup,dropoff,vehicle,fare,'requested',null,new Date().toISOString());
+ res.status(201).json({ride:findRide.get(id)});
+});
+const transitions={accept:['requested','accepted'],start:['accepted','in_progress'],complete:['in_progress','completed'],cancel:['requested','cancelled']};
+app.post('/api/rides/:id/:action',(req,res)=>{
+ const action=req.params.action; const ride=findRide.get(req.params.id);if(!ride)return res.status(404).json({error:'Ride not found'});
+ if(!transitions[action]||ride.status!==transitions[action][0])return res.status(409).json({error:'Invalid status transition'});
+ const name=action==='accept'?clean(req.body.driverName):ride.driverName;
+ if(action==='accept'&&!name)return res.status(400).json({error:'Captain name required'});
+ db.prepare('UPDATE rides SET status=?,driverName=? WHERE id=?').run(transitions[action][1],name,ride.id);
+ res.json({ride:findRide.get(ride.id)});
+});
+app.get('/api/admin/stats',(_,res)=>res.json({rides:db.prepare('SELECT status, COUNT(*) count FROM rides GROUP BY status').all(),drivers:db.prepare('SELECT COUNT(*) count FROM drivers').get().count}));
+app.get('/api/admin/drivers',(_,res)=>res.json({drivers:db.prepare('SELECT * FROM drivers ORDER BY createdAt DESC').all()}));
+app.post('/api/admin/drivers',(req,res)=>{const name=clean(req.body.name);if(!name)return res.status(400).json({error:'Name required'});const id=crypto.randomUUID();db.prepare('INSERT INTO drivers VALUES (?,?,?,?,?)').run(id,name,clean(req.body.phone,25),0,new Date().toISOString());res.status(201).json({id});});
+app.post('/api/admin/drivers/:id/approve',(req,res)=>{const info=db.prepare('UPDATE drivers SET approved=1 WHERE id=?').run(req.params.id);res.status(info.changes?200:404).json(info.changes?{ok:true}:{error:'Driver not found'});});
+const port=Number(process.env.PORT||3000);app.listen(port,'0.0.0.0',()=>console.log(`RIDEON demo API listening on ${port}`));
