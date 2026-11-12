@@ -1,4 +1,15 @@
-# RIDEON — Flutter Bike Taxi, Auto & Cab Booking App
+# RIDEON — Flutter Bike Taxi, Auto & Cab Booking App Source Code
+
+![Flutter](https://img.shields.io/badge/Flutter-Dart-02569B?logo=flutter)
+![Backend](https://img.shields.io/badge/Backend-Node.js%20%2B%20Express-339933?logo=nodedotjs)
+![Database](https://img.shields.io/badge/Database-SQLite-003B57?logo=sqlite)
+![Status](https://img.shields.io/badge/Status-Development%20Prototype-orange)
+
+**RIDEON** is a Flutter-based, open-source ride-hailing application prototype for learning how to build a bike taxi booking app, auto-rickshaw booking app, and cab reservation system. Explore a passenger interface, captain (driver) workflow, Node.js REST API, SQLite database, and admin dashboard.
+
+**Project links:** [Source code](https://github.com/iamAdarshAnand/RideOn) · [Issues](https://github.com/iamAdarshAnand/RideOn/issues) · [Contributing](CONTRIBUTING.md)
+
+
 
 **Open-source-style ride-hailing development prototype for Android, Node.js and SQLite.** Build and learn from a passenger booking app, captain (driver) workflow, REST API and web admin dashboard.
 
@@ -132,6 +143,12 @@ Open http://localhost:8080. The page expects the local API on port 3000. **Never
 - [ ] Internationalization, accessibility and tests
 - [ ] Separate production passenger and captain apps
 - [ ] Production deployment, monitoring and transport compliance
+
+## Find RIDEON on GitHub
+
+Relevant developer searches include **Flutter taxi booking app**, **bike taxi booking app source code**, **ride-hailing application GitHub**, **driver passenger booking system**, **Node.js taxi booking backend**, **SQLite ride management system**, **Flutter Android mobility app**, and **ride-sharing app development tutorial**.
+
+RIDEON is an educational starting point, not a finished commercial transportation platform. Features described in the roadmap are not implemented in v0.1.
 
 ## Search and discovery
 
